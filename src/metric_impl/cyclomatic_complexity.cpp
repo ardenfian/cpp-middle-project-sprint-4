@@ -65,5 +65,24 @@ MetricResult::ValueType CyclomaticComplexityMetric::CalculateImpl(const function
     // в цикле (это допустимо, так как вы работаете со строковым представлением AST,
     // а не с исходным кодом напрямую).
 
+    // Подсчёт количества всех управляющих узлов в AST
+    auto count_occurrences = [&](std::string_view needle) {
+        MetricResult::ValueType count = 0;
+        size_t pos = 0;
+
+        while ((pos = function_ast.find(needle, pos)) != std::string::npos) {
+            ++count;
+            pos += needle.size();
+        }
+        return count;
+    };
+
+    // Используем std::ranges для аккуратного суммирования
+    MetricResult::ValueType total =
+        std::ranges::fold_left(complexity_nodes, MetricResult::ValueType{0},
+                               [&](auto acc, std::string_view node) { return acc + count_occurrences(node); });
+
+    // Базовая сложность
+    return total + 1;
 }
 }  // namespace analyzer::metric::metric_impl
