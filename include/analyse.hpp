@@ -43,31 +43,6 @@ namespace rs = std::ranges;
  */
 auto AnalyseFunctions(const std::vector<std::string> &files,
                       const analyzer::metric::MetricExtractor &metric_extractor) {
-#if 0
-    std::vector<std::vector<function::Function>> allFuncs;
-    std::vector<std::pair<function::Function, metric::MetricResults>> res;
-
-    auto getFunc = [&](const std::string &fileName) {
-        try {
-            file::File astFile(fileName);
-            function::FunctionExtractor extractor;
-            allFuncs.push_back(extractor.Get(astFile));
-        } catch (const std::exception &e) {
-            std::print("{}", e.what());
-        }
-    };
-
-    std::ranges::for_each(files, getFunc);
-
-    auto GetMetric = [&](const function::Function &func) {
-        res.push_back(std::make_pair(func, metric_extractor.Get(func)));
-    };
-
-    auto flatFuncs = allFuncs | std::views::join;
-
-    std::ranges::for_each(flatFuncs, GetMetric);
-#endif
-
     auto getFileAst = [&](const std::string &fileName) -> file::File {
         try {
             return file::File(fileName);
