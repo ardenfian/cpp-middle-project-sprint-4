@@ -1,3 +1,5 @@
+#include <exception>
+#include <stdexcept>
 #include <unistd.h>
 
 #include <algorithm>
@@ -14,6 +16,7 @@
 #include <ranges>
 #include <sstream>
 #include <string>
+#include <utility>
 #include <variant>
 #include <vector>
 
@@ -40,11 +43,33 @@ namespace rs = std::ranges;
  */
 auto AnalyseFunctions(const std::vector<std::string> &files,
                       const analyzer::metric::MetricExtractor &metric_extractor) {
-    // здесь ваш код
+    auto getFileAst = [&](const std::string &fileName) -> file::File {
+        try {
+            return file::File(fileName);
+        } catch (const std::exception &e) {
+            std::print("{}", e.what());
+            throw std::runtime_error("File does not exist");
+        }
+    };
+
+    auto getFuncs = [&](const file::File &file) -> std::vector<function::Function> {
+        function::FunctionExtractor extractor;
+        return extractor.Get(file);
+    };
+
+    auto getMetrics = [&](const function::Function &func) -> std::pair<function::Function, metric::MetricResults> {
+        return std::make_pair(func, metric_extractor.Get(func));
+    };
+
+    auto astFiles = files | std::views::transform(getFileAst);
+    auto allFuncs = astFiles | std::views::transform(getFuncs) | std::views::join;
+    auto allMetrics = allFuncs | std::views::transform(getMetrics) | std::ranges::to<std::vector>();
+
+    return allMetrics;
 }
 
 /**
- * 
+ *
  * @brief Группирует результаты анализа по классам.
  *
  * Эта функция:
@@ -62,7 +87,17 @@ auto AnalyseFunctions(const std::vector<std::string> &files,
  * действительно исчезают из результата.
  */
 auto SplitByClasses(const auto &analysis) {
-    // здесь ваш код
+    auto filterClassFuncs = [](const std::pair<function::Function, metric::MetricResults> &result) {
+        return result.first.class_name.has_value();
+    };
+
+    auto compareClass = [](const std::pair<function::Function, metric::MetricResults> &lhs,
+                           const std::pair<function::Function, metric::MetricResults> &rhs) {
+        return lhs.first.class_name == rhs.first.class_name;
+    };
+
+    return analysis | std::views::filter(filterClassFuncs) | std::views::chunk_by(compareClass) |
+           std::ranges::to<std::vector>();
 }
 
 /**
@@ -74,7 +109,12 @@ auto SplitByClasses(const auto &analysis) {
  * - Использует `chunk_by`, поэтому **порядок функций в `analysis` должен быть по файлам**.
  */
 auto SplitByFiles(const auto &analysis) {
-    // здесь ваш код
+    auto compareFileNames = [](const std::pair<function::Function, metric::MetricResults> &lhs,
+                               const std::pair<function::Function, metric::MetricResults> &rhs) {
+        return lhs.first.filename == rhs.first.filename;
+    };
+
+    return analysis | std::views::chunk_by(compareFileNames) | std::ranges::to<std::vector>();
 }
 
 /**
@@ -87,7 +127,7 @@ auto SplitByFiles(const auto &analysis) {
  */
 void AccumulateFunctionAnalysis(const auto &analysis,
                                 const analyzer::metric_accumulator::MetricsAccumulator &accumulator) {
-    // здесь ваш код
+    std::ranges::for_each(analysis, [&](const auto &elem) { accumulator.AccumulateNextFunctionResults(elem.second); });
 }
 
 }  // namespace analyzer

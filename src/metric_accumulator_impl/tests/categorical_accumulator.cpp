@@ -8,6 +8,4 @@
 
 namespace analyzer::metric_accumulator::metric_accumulator_impl::test {
 
-// здесь ваш код
-
 }  // namespace analyzer::metric_accumulator::metric_accumulator_impl::test
