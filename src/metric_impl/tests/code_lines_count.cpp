@@ -8,9 +8,6 @@
 
 namespace analyzer::metric::metric_impl {
 
-// здесь ваш код
-// TEST(BasicCheck, Sum) { EXPECT_EQ(1 + 1, 2); }
-
 TEST(CODE_LINES_COUNT, comments) {
 
     function::FunctionExtractor extractor;

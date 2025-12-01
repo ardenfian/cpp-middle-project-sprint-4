@@ -4,6 +4,4 @@
 
 namespace analyzer::metric::metric_impl {
 
-// здесь ваш код
-
 }  // namespace analyzer::metric::metric_impl
